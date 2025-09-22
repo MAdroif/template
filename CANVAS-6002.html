@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mengenal Antarmuka n8n</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* === GLOBAL STYLES & VARIABLES === */
+        :root {
+            --bg-color: #0A0A0A;
+            --grid-color: rgba(255, 255, 255, 0.07);
+            --text-color: #EAEAEA;
+            --text-muted: #999999;
+            --accent-color: #C4FF4B;
+            --accent-text-dark: #0A0A0A;
+            --font-main: 'Inter', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-main);
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(to right, var(--grid-color) 1px, var(--bg-color) 1px);
+            background-size: 40px 40px;
+        }
+
+        /* === SLIDE CONTAINER & STRUCTURE === */
+        main {
+            position: relative;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            text-align: left;
+            padding: 5vw 10vw;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out, visibility 0.6s;
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+            z-index: 2;
+        }
+        
+        /* === CONTENT STYLING (LEFT ALIGNED) === */
+        .slide-content {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .slide-title {
+            font-size: clamp(2.2rem, 6vw, 5rem);
+            font-weight: 900;
+            color: var(--text-color);
+            margin-bottom: 0.5em;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+        }
+        
+        .slide .sub-heading {
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            font-weight: 400;
+            color: var(--text-muted);
+            margin-bottom: 1.5em;
+            max-width: 90%;
+        }
+
+        .slide p {
+            font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+            line-height: 1.65;
+            margin-bottom: 1.2em;
+            max-width: 90%;
+        }
+        
+        .highlight {
+            background-color: var(--accent-color);
+            color: var(--accent-text-dark);
+            font-weight: 700;
+            padding: 0.1em 0.4em;
+            border-radius: 6px;
+            line-height: 1.5;
+        }
+        
+        .slide ul { list-style: none; padding: 0; margin: 1.5em 0; display: block; }
+        .slide li { font-size: clamp(1.1rem, 2.2vw, 1.5rem); margin-bottom: 0.8em; line-height: 1.6; display: flex; align-items: flex-start; }
+        .svg-icon { width: 1.2em; height: 1.2em; flex-shrink: 0; margin-right: 0.8em; margin-top: 0.2em; color: var(--accent-color); }
+        .inline-icon { width: 1em; height: 1em; margin-right: 0.3em; vertical-align: -0.15em; }
+        .slide-cta a { color: var(--accent-color); text-decoration: none; font-weight: 700; border-bottom: 2px solid var(--accent-color); transition: all 0.2s ease-in-out; }
+        .slide-cta a:hover { background-color: var(--accent-color); color: var(--accent-text-dark); padding: 0.2em 0.1em; }
+
+        /* === HEADER & NAVIGATION === */
+        .slide-header { position: fixed; top: 30px; right: 40px; font-size: clamp(0.9rem, 1.5vw, 1.1rem); font-weight: 700; color: var(--text-muted); z-index: 100; }
+        .navigation { position: fixed; bottom: 30px; right: 40px; display: flex; gap: 15px; z-index: 100; }
+        .nav-btn { background-color: rgba(30, 30, 30, 0.5); border: 1px solid rgba(255, 255, 255, 0.2); color: var(--text-color); width: 50px; height: 50px; border-radius: 50%; cursor: pointer; transition: all 0.3s ease; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .nav-btn:hover:not(:disabled) { background-color: var(--accent-color); color: var(--accent-text-dark); border-color: var(--accent-color); transform: scale(1.1); }
+        .nav-btn:disabled { color: #555; border-color: #333; cursor: not-allowed; background-color: rgba(30, 30, 30, 0.2); }
+        .nav-btn .svg-icon { margin: 0; }
+        
+        /* === SLIDE 7: WORKFLOW DIAGRAM STYLES === */
+        .workflow-diagram-container {
+            width: 100%;
+            height: 60vh;
+            max-height: 500px;
+            position: relative;
+            transform: scale(0.9) translateX(-5%);
+        }
+
+        .flow-node {
+            position: absolute;
+            padding: 1.2rem 1.5rem;
+            background: rgba(30, 30, 30, 0.4);
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            min-width: 280px;
+        }
+
+        .flow-node .node-title {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text-color);
+            margin-bottom: 0.25em;
+        }
+
+        .flow-node .node-desc {
+            font-weight: 400;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 1em;
+        }
+
+        .flow-node .node-tag {
+            display: inline-block;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--accent-color);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-bottom: 0.8em;
+        }
+
+        .node-icon-list { display: flex; gap: 8px; align-items: center; }
+        .node-icon-list img { width: 24px; height: 24px; }
+        
+        /* Node Positions */
+        #node-1 { top: 0; left: 10%; }
+        #node-2 { top: 40%; left: 0; transform: rotate(-5deg); }
+        #node-3 { top: 25%; left: 55%; }
+        #node-4 { top: 70%; left: 45%; transform: rotate(3deg); }
+        #node-5 { top: 0; left: 50%; padding: 0.8rem 1rem; min-width: auto; }
+        #node-5 .node-desc { margin-bottom: 0; }
+
+
+        .connector-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .connector-svg path {
+            fill: none;
+            stroke: #4A5568;
+            stroke-width: 2;
+            stroke-dasharray: 4 8;
+            stroke-linecap: round;
+        }
+
+    </style>
+</head>
+<body>
+    <header class="slide-header">
+        <span id="slide-counter">1 / 9</span>
+    </header>
+
+    <main>
+        <!-- SVG Icons Definition -->
+        <svg width="0" height="0" style="display:none;">
+          <defs>
+            <symbol id="icon-check" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 12l5 5l10 -10"></path></symbol>
+            <symbol id="icon-arrow-right" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><line x1="5" y1="12" x2="19" y2="12"></line><line x1="13" y1="18" x2="19" y2="12"></line><line x1="13" y1="6" x2="19" y2="12"></line></symbol>
+            <symbol id="icon-arrow-left" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><line x1="5" y1="12" x2="19" y2="12"></line><line x1="5" y1="12" x2="11" y2="18"></line><line x1="5" y1="12" x2="11" y2="6"></line></symbol>
+            <symbol id="icon-bookmark" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M9 4h6a2 2 0 0 1 2 2v14l-5 -3l-5 3v-14a2 2 0 0 1 2 -2"></path></symbol>
+            <symbol id="icon-device-mobile" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><rect x="7" y="4" width="10" height="16" rx="1"></rect><line x1="11" y1="5" x2="13" y2="5"></line><line x1="12" y1="17" x2="12" y2="17.01"></line></symbol>
+          </defs>
+        </svg>
+
+        <!-- Slides 1-6 are the same as before -->
+        <section class="slide active"><div class="slide-content"><p class="sub-heading">Mengenal Antarmuka n8n</p><h1 class="slide-title">n8n itu gampang kok...<br>asal tahu bagian pentingnya.</h1><p>Kalau kamu baru mulai, pahami dulu 4 bagian utama yang jadi fondasi semua automasi: Workspace, Node, Trigger, dan Flow. Yuk kita bedah.</p></div></section>
+        <section class="slide"><div class="slide-content"><h1 class="slide-title">Apa itu Workspace?</h1><p class="sub-heading">"Workspace = <span class="highlight">kanvas utama</span> tempat kamu membangun automasi."</p><p>Bayangin workspace kayak "meja kerja digital" kamu. Di sinilah kamu menyusun node-node, melihat alur automasi, dan mengatur semuanya secara visual. Tanpa workspace, gak ada tempat kamu bangun flow.</p></div></section>
+        <section class="slide"><div class="slide-content"><h1 class="slide-title">Apa itu Node?</h1><p class="sub-heading">"Node = <span class="highlight">blok fungsi</span>. Masing-masing punya tugas spesifik."</p><p>Contoh: HTTP Request, Send Email, Google Sheets, Discord. Tinggal drag & drop, lalu atur input/output-nya. n8n akan menjalankannya satu per satu sesuai urutan.</p></div></section>
+        <section class="slide"><div class="slide-content"><h1 class="slide-title">Apa itu Trigger?</h1><p class="sub-heading">"Trigger = <span class="highlight">titik awal</span> automasi berjalan."</p><p>Trigger menentukan kapan atau apa yang memicu automasi. Contohnya seperti jadwal (Cron), saat ada Email Baru, atau via Webhook. Tanpa trigger, flow kamu gak akan pernah dimulai.</p></div></section>
+        <section class="slide"><div class="slide-content"><h1 class="slide-title">Apa itu Flow?</h1><p class="sub-heading">"Flow = <span class="highlight">rangkaian langkah</span> dari awal sampai akhir."</p><p>Flow membentuk satu automasi penuh yang terdiri dari Trigger, beberapa Node, dan sebuah Aksi akhir. Contoh: <span class="highlight">Form masuk → Data dicatat → Email otomatis dikirim.</span></p></div></section>
+        <section class="slide"><div class="slide-content"><h1 class="slide-title">Hubungan Semuanya</h1><p class="sub-heading">"Trigger ➝ Node ➝ Flow. Semuanya di dalam Workspace."</p><ul><li><svg class="svg-icon"><use href="#icon-check"></use></svg><div><span class="highlight">Workspace</span> = wadahnya</div></li><li><svg class="svg-icon"><use href="#icon-check"></use></svg><div><span class="highlight">Trigger</span> = pemicunya</div></li><li><svg class="svg-icon"><use href="#icon-check"></use></svg><div><span class="highlight">Node</span> = langkah-langkahnya</div></li><li><svg class="svg-icon"><use href="#icon-check"></use></svg><div><span class="highlight">Flow</span> = keseluruhan prosesnya</div></li></ul></div></section>
+        
+        <!-- SLIDE 7: THE NEW WORKFLOW DIAGRAM SLIDE -->
+        <section class="slide">
+            <div class="slide-content">
+                <h1 class="slide-title">Tips Flow Lebih Rapi</h1>
+                <p class="sub-heading">Flow yang rapi dan terstruktur memudahkan debugging dan kolaborasi.</p>
+                <div class="workflow-diagram-container">
+                    <!-- Connectors -->
+                    <svg class="connector-svg">
+                        <path d="M 280 90 C 200 150, 200 200, 160 250"></path>
+                        <path d="M 390 90 C 480 120, 500 150, 580 180"></path>
+                        <path d="M 690 180 C 650 250, 600 300, 590 330"></path>
+                    </svg>
+
+                    <!-- Node 1: Trigger -->
+                    <div class="flow-node" id="node-1">
+                        <div class="node-title">Trigger: Webhook</div>
+                        <div class="node-desc">Menerima data dari form masuk</div>
+                        <div class="node-tag">Start Point</div>
+                        <div class="node-icon-list">
+                            <svg width="24px" height="24px" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><defs><style>.a{fill:none;stroke:#ffffff;stroke-linecap:round;stroke-linejoin:round;}</style></defs><path class="a" d="M2.5,24.09A21.5,21.5,0,1,0,24,2.59"></path><line class="a" x1="24" y1="24.09" x2="8.8" y2="8.89"></line></g></svg>
+                        </div>
+                    </div>
+
+                    <!-- Node 2: Process Data -->
+                    <div class="flow-node" id="node-2">
+                        <div class="node-title">Task: Simpan ke Database</div>
+                        <div class="node-desc">Menyusun & menyimpan data ke tabel</div>
+                        <div class="node-tag" style="color:#63B3ED; background: rgba(99, 179, 237, 0.1);">Processing</div>
+                        <div class="node-icon-list">
+                            <svg width="24px" height="24px" viewBox="-4 0 64 64" xmlns="http://www.w3.org/2000/svg" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M5.131-.001c-2.801 0-5.072 2.272-5.072 5.074v53.841c0 2.803 2.271 5.074 5.072 5.074h45.775c2.801 0 5.074-2.271 5.074-5.074v-38.605l-18.904-20.31h-31.945z" fill-rule="evenodd" clip-rule="evenodd" fill="#20A971"></path> <path d="M10.107 37.466v16.419h21.521v-16.419h-21.521zm6.458 15.078h-4.967v-3.58h4.967v3.58zm0-5.012h-4.967v-3.579h4.967v3.579zm0-5.011h-4.967v-3.58h4.967v3.58zm13.632 10.023h-12.155v-3.58h12.155v3.58zm0-5.012h-12.155v-3.579h12.155v3.579zm0-5.011h-12.155v-3.58h12.155v3.58z" fill="#ffffff"></path> <g fill-rule="evenodd" clip-rule="evenodd"> <path d="M55.98 20.32v1h-12.801s-6.312-1.26-6.127-6.707c0 0 .207 5.707 6.002 5.707h12.926z" fill="#189355"></path> <path d="M37.076-.031v14.561c0 1.656 1.104 5.791 6.104 5.791h12.801l-18.905-20.352z" opacity=".5" fill="#ffffff"></path> </g> </g></svg>
+                            <img src="https://www.vectorlogo.zone/logos/airtable/airtable-icon.svg" alt="Airtable Icon">
+                            <svg width="24px" height="24px" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M5.716 29.2178L2.27664 24.9331C1.44913 23.9023 1 22.6346 1 21.3299V5.81499C1 3.86064 2.56359 2.23897 4.58071 2.10125L20.5321 1.01218C21.691 0.933062 22.8428 1.24109 23.7948 1.8847L29.3992 5.67391C30.4025 6.35219 31 7.46099 31 8.64426V26.2832C31 28.1958 29.4626 29.7793 27.4876 29.9009L9.78333 30.9907C8.20733 31.0877 6.68399 30.4237 5.716 29.2178Z" fill="white"></path> <path d="M11.2481 13.5787V13.3756C11.2481 12.8607 11.6605 12.4337 12.192 12.3982L16.0633 12.1397L21.417 20.0235V13.1041L20.039 12.9204V12.824C20.039 12.303 20.4608 11.8732 20.9991 11.8456L24.5216 11.6652V12.1721C24.5216 12.41 24.3446 12.6136 24.1021 12.6546L23.2544 12.798V24.0037L22.1906 24.3695C21.3018 24.6752 20.3124 24.348 19.8036 23.5803L14.6061 15.7372V23.223L16.2058 23.5291L16.1836 23.6775C16.1137 24.1423 15.7124 24.4939 15.227 24.5155L11.2481 24.6926C11.1955 24.1927 11.5701 23.7456 12.0869 23.6913L12.6103 23.6363V13.6552L11.2481 13.5787Z" fill="#000000"></path> <path fill-rule="evenodd" clip-rule="evenodd" d="M20.6749 2.96678L4.72347 4.05585C3.76799 4.12109 3.02734 4.88925 3.02734 5.81499V21.3299C3.02734 22.1997 3.32676 23.0448 3.87843 23.7321L7.3178 28.0167C7.87388 28.7094 8.74899 29.0909 9.65435 29.0352L27.3586 27.9454C28.266 27.8895 28.9724 27.1619 28.9724 26.2832V8.64426C28.9724 8.10059 28.6979 7.59115 28.2369 7.27951L22.6325 3.49029C22.0613 3.10413 21.3702 2.91931 20.6749 2.96678ZM5.51447 6.057C5.29261 5.89274 5.3982 5.55055 5.6769 5.53056L20.7822 4.44711C21.2635 4.41259 21.7417 4.54512 22.1309 4.82088L25.1617 6.96813C25.2767 7.04965 25.2228 7.22563 25.0803 7.23338L9.08387 8.10336C8.59977 8.12969 8.12193 7.98747 7.73701 7.7025L5.51447 6.057ZM8.33357 10.8307C8.33357 10.311 8.75341 9.88177 9.29027 9.85253L26.203 8.93145C26.7263 8.90296 27.1667 9.30534 27.1667 9.81182V25.0853C27.1667 25.604 26.7484 26.0328 26.2126 26.0633L9.40688 27.0195C8.8246 27.0527 8.33357 26.6052 8.33357 26.0415V10.8307Z" fill="#000000"></path> </g></svg>
+                        </div>
+                    </div>
+
+                     <!-- Node 3: Conditional Logic -->
+                    <div class="flow-node" id="node-3">
+                        <div class="node-title">Logic: IF Branch</div>
+                        <div class="node-desc">Jika `plan == "premium"`, lanjut.</div>
+                        <div class="node-tag" style="color:#F6AD55; background: rgba(246, 173, 85, 0.1);">Logic</div>
+                         <div class="node-icon-list">
+                            <svg fill="#ffffff" width="24px" height="24px" viewBox="0 0 256 256" id="Flat" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M168,108h48a12.01343,12.01343,0,0,0,12-12V48a12.01343,12.01343,0,0,0-12-12H168a12.01343,12.01343,0,0,0-12,12V68H144a28.03146,28.03146,0,0,0-28,28v28H84V108A12.01343,12.01343,0,0,0,72,96H32a12.01343,12.01343,0,0,0-12,12v40a12.01343,12.01343,0,0,0,12,12H72a12.01343,12.01343,0,0,0,12-12V132h32v28a28.03146,28.03146,0,0,0,28,28h12v20a12.01343,12.01343,0,0,0,12,12h48a12.01343,12.01343,0,0,0,12-12V160a12.01343,12.01343,0,0,0-12-12H168a12.01343,12.01343,0,0,0-12,12v20H144a20.02229,20.02229,0,0,1-20-20V96a20.02229,20.02229,0,0,1,20-20h12V96A12.01343,12.01343,0,0,0,168,108ZM76,148a4.00427,4.00427,0,0,1-4,4H32a4.00427,4.00427,0,0,1-4-4V108a4.00427,4.00427,0,0,1,4-4H72a4.00427,4.00427,0,0,1,4,4Zm88,12a4.00427,4.00427,0,0,1,4-4h48a4.00427,4.00427,0,0,1,4,4v48a4.00427,4.00427,0,0,1-4,4H168a4.00427,4.00427,0,0,1-4-4Zm0-112a4.00427,4.00427,0,0,1,4-4h48a4.00427,4.00427,0,0,1,4,4V96a4.00427,4.00427,0,0,1-4,4H168a4.00427,4.00427,0,0,1-4-4Z"></path> </g></svg>
+                        </div>
+                    </div>
+
+                    <!-- Node 4: Action -->
+                    <div class="flow-node" id="node-4">
+                        <div class="node-title">Action: Kirim Notifikasi</div>
+                        <div class="node-desc">Mengirim pesan konfirmasi</div>
+                        <div class="node-tag" style="color:#81E6D9; background: rgba(129, 230, 217, 0.1);">End Point</div>
+                         <div class="node-icon-list">
+                           <img src="https://www.vectorlogo.zone/logos/slack/slack-icon.svg" alt="Slack Icon">
+                           <img src="https://www.vectorlogo.zone/logos/telegram/telegram-icon.svg" alt="Telegram Icon">
+                           <img src="https://www.vectorlogo.zone/logos/gmail/gmail-icon.svg" alt="Gmail Icon">
+                        </div>
+                    </div>
+                    
+                    <!-- Node 5: Tip Label -->
+                     <div class="flow-node" id="node-5">
+                        <div class="node-desc">Tip: Beri Label Jelas</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slides 8-9 are the same as before -->
+        <section class="slide"><div class="slide-content"><h1 class="slide-title">Kenapa Ini Fondasi Penting?</h1><p class="sub-heading">"Karena pemahaman antarmuka mempercepat segalanya."</p><p>Kalau kamu udah paham, hasilnya:</p><ul><li><svg class="svg-icon"><use href="#icon-check"></use></svg>Navigasi makin cepat</li><li><svg class="svg-icon"><use href="#icon-check"></use></svg>Error makin sedikit</li><li><svg class="svg-icon"><use href="#icon-check"></use></svg>Flow jadi lebih scalable</li><li><svg class="svg-icon"><use href="#icon-check"></use></svg>Belajar fitur lanjut jadi lebih mudah</li></ul></div></section>
+        <section class="slide"><div class="slide-content"><h1 class="slide-title">Siap untuk praktek?</h1><p><svg class="svg-icon inline-icon"><use href="#icon-bookmark"></use></svg><span class="highlight">Save dulu materi ini</span> biar bisa kamu buka ulang.</p><p><svg class="svg-icon inline-icon"><use href="#icon-device-mobile"></use></svg>Follow untuk tips lanjutan: automasi dari nol, koneksi antar tools, dan template siap pakai.</p><p class="slide-cta"><svg class="svg-icon inline-icon"><use href="#icon-arrow-right"></use></svg><a href="https://t.me/tipstrickchatgpt7" target="_blank" rel="noopener noreferrer">t.me/tipstrickchatgpt7</a></p></div></section>
+    </main>
+
+    <div class="navigation">
+        <button id="prev-btn" class="nav-btn" aria-label="Slide Sebelumnya"><svg class="svg-icon"><use href="#icon-arrow-left"></use></svg></button>
+        <button id="next-btn" class="nav-btn" aria-label="Slide Berikutnya"><svg class="svg-icon"><use href="#icon-arrow-right"></use></svg></button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const slides = document.querySelectorAll('.slide');
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const slideCounter = document.getElementById('slide-counter');
+            let currentSlide = 0;
+            const totalSlides = slides.length;
+            function updateView() {
+                slides.forEach((slide, index) => {
+                    slide.classList.toggle('active', index === currentSlide);
+                });
+                slideCounter.textContent = `${currentSlide + 1} / ${totalSlides}`;
+                prevBtn.disabled = currentSlide === 0;
+                nextBtn.disabled = currentSlide === totalSlides - 1;
+            }
+            function goToNextSlide() { if (currentSlide < totalSlides - 1) { currentSlide++; updateView(); } }
+            function goToPrevSlide() { if (currentSlide > 0) { currentSlide--; updateView(); } }
+            nextBtn.addEventListener('click', goToNextSlide);
+            prevBtn.addEventListener('click', goToPrevSlide);
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goToNextSlide(); } 
+                else if (e.key === 'ArrowLeft') { e.preventDefault(); goToPrevSlide(); }
+            });
+            updateView();
+        });
+    </script>
+</body>
+</html>
